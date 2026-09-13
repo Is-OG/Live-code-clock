@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Live Time</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --background: #30465a;
+            --blue: #4da3f5;
+            --white: #eeeeee;
+            --yellow: #f0d66f;
+            --orange: #e99372;
+            --clock-border: #e5e5e5;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+
+            background: var(--background);
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            font-family: Consolas, "Courier New", monospace;
+
+            overflow: hidden;
+
+            transition: background 0.4s ease;
+        }
+
+
+        /* =========================
+           MAIN CONTAINER
+        ========================= */
+
+        .container {
+            display: flex;
+            align-items: center;
+
+            gap: 65px;
+
+            transform: translateY(-10px);
+        }
+
+
+        /* =========================
+           CODE
+        ========================= */
+
+        .code {
+            font-size: 19px;
+            line-height: 1.7;
+
+            white-space: nowrap;
+        }
+
+        .indent {
+            margin-left: 42px;
+        }
+
+        .blue {
+            color: var(--blue);
+        }
+
+        .white {
+            color: var(--white);
+        }
+
+        .yellow {
+            color: var(--yellow);
+        }
+
+        .orange {
+            color: var(--orange);
+        }
+
+
+        /* =========================
+           CLOCK
+        ========================= */
+
+        .clock {
+            width: 125px;
+            height: 125px;
+
+            border: 2px solid var(--clock-border);
+
+            border-radius: 50%;
+
+            position: relative;
+
+            box-shadow:
+                0 0 8px rgba(255, 210, 180, 0.8),
+                0 0 25px rgba(255, 190, 160, 0.3);
+
+            transition: border-color 0.4s ease;
+        }
+
+
+        /* Clock hands */
+
+        .hand {
+            position: absolute;
+
+            left: 50%;
+            bottom: 50%;
+
+            transform-origin: bottom center;
+
+            border-radius: 10px;
+        }
+
+
+        .hour-hand {
+            width: 4px;
+            height: 36px;
+
+            background: var(--white);
+        }
+
+
+        .minute-hand {
+            width: 3px;
+            height: 49px;
+
+            background: var(--white);
+        }
+
+
+        .second-hand {
+            width: 2px;
+            height: 55px;
+
+            background: var(--orange);
+        }
+
+
+        /* Center dot */
+
+        .center {
+            position: absolute;
+
+            width: 9px;
+            height: 9px;
+
+            background: var(--white);
+
+            border-radius: 50%;
+
+            left: 50%;
+            top: 50%;
+
+            transform: translate(-50%, -50%);
+
+            z-index: 10;
+        }
+
+
+        /* =========================
+           DARK / LIGHT TOGGLE
+        ========================= */
+
+        .theme-toggle {
+            position: fixed;
+
+            top: 20px;
+            right: 24px;
+
+            width: 74px;
+            height: 37px;
+
+            border: none;
+
+            border-radius: 30px;
+
+            background: #5ca1d8;
+
+            cursor: pointer;
+
+            padding: 3px;
+
+            transition: background 0.4s ease;
+        }
+
+
+        .toggle-circle {
+            width: 31px;
+            height: 31px;
+
+            border-radius: 50%;
+
+            background: #263b4c;
+
+            display: flex;
+
+            justify-content: center;
+            align-items: center;
+
+            font-size: 17px;
+
+            transition:
+                transform 0.35s ease,
+                background 0.35s ease;
+        }
+
+
+        /* Light mode */
+
+        .light {
+            --background: #e9eef2;
+            --blue: #2778bd;
+            --white: #26333e;
+            --yellow: #9a7610;
+            --orange: #c86648;
+            --clock-border: #26333e;
+        }
+
+
+        .theme-toggle.light-mode .toggle-circle {
+            transform: translateX(37px);
+
+            background: #ffffff;
+        }
+
+
+        /* =========================
+           SMALL SCREENS
+        ========================= */
+
+        @media (max-width: 800px) {
+
+            .container {
+                gap: 30px;
+            }
+
+            .code {
+                font-size: 15px;
+            }
+
+            .indent {
+                margin-left: 25px;
+            }
+
+            .clock {
+                width: 100px;
+                height: 100px;
+            }
+
+            .hour-hand {
+                height: 29px;
+            }
+
+            .minute-hand {
+                height: 39px;
+            }
+
+            .second-hand {
+                height: 44px;
+            }
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+
+    <!-- =========================
+         DARK / LIGHT BUTTON
+    ========================= -->
+
+    <button
+        class="theme-toggle"
+        id="themeToggle"
+        title="Change theme"
+    >
+
+        <div
+            class="toggle-circle"
+            id="toggleCircle"
+        >
+            🌙
+        </div>
+
+    </button>
+
+
+    <!-- =========================
+         MAIN CONTENT
+    ========================= -->
+
+    <div class="container">
+
+
+        <!-- CODE -->
+
+        <div class="code">
+
+            <div>
+                <span class="blue">const</span>
+                <span class="white"> currentTime = {</span>
+            </div>
+
+
+            <div class="indent">
+                <span class="blue">year:</span>
+                <span class="yellow" id="year"></span>
+                <span class="white">,</span>
+            </div>
+
+
+            <div class="indent">
+                <span class="blue">month:</span>
+                <span class="yellow" id="month"></span>
+                <span class="white">,</span>
+            </div>
+
+
+            <div class="indent">
+                <span class="blue">day:</span>
+                <span class="yellow" id="day"></span>
+                <span class="white">,</span>
+            </div>
+
+
+            <div class="indent">
+                <span class="blue">dayOfWeek:</span>
+                <span class="orange" id="dayOfWeek"></span>
+                <span class="white">,</span>
+            </div>
+
+
+            <div class="indent">
+                <span class="blue">hour:</span>
+                <span class="yellow" id="hour"></span>
+                <span class="white">,</span>
+            </div>
+
+
+            <div class="indent">
+                <span class="blue">minute:</span>
+                <span class="yellow" id="minute"></span>
+                <span class="white">,</span>
+            </div>
+
+
+            <div class="indent">
+                <span class="blue">second:</span>
+                <span class="yellow" id="second"></span>
+                <span class="white">,</span>
+            </div>
+
+
+            <div class="indent">
+                <span class="blue">dayProgress:</span>
+                <span class="yellow" id="dayProgress"></span>
+            </div>
+
+
+            <div>
+                <span class="white">};</span>
+            </div>
+
+        </div>
+
+
+        <!-- =========================
+             ANALOG CLOCK
+        ========================= -->
+
+        <div class="clock">
+
+            <div
+                class="hand hour-hand"
+                id="hourHand"
+            ></div>
+
+            <div
+                class="hand minute-hand"
+                id="minuteHand"
+            ></div>
+
+            <div
+                class="hand second-hand"
+                id="secondHand"
+            ></div>
+
+            <div class="center"></div>
+
+        </div>
+
+    </div>
+
+
+
+    <script>
+
+        /* =========================
+           LIVE TIME
+        ========================= */
+
+        function updateTime() {
+
+            const now = new Date();
+
+
+            // Date
+
+            const year =
+                now.getFullYear();
+
+
+            const month =
+                String(
+                    now.getMonth() + 1
+                ).padStart(2, "0");
+
+
+            const day =
+                String(
+                    now.getDate()
+                ).padStart(2, "0");
+
+
+            // Day
+
+            const dayOfWeek =
+                now.toLocaleDateString(
+                    "en-US",
+                    {
+                        weekday: "long"
+                    }
+                );
+
+
+            // Time
+
+            const hour =
+                now.getHours();
+
+
+            const minute =
+                now.getMinutes();
+
+
+            const second =
+                now.getSeconds();
+
+
+            // Display
+
+            document.getElementById("year")
+                .textContent = year;
+
+
+            document.getElementById("month")
+                .textContent = month;
+
+
+            document.getElementById("day")
+                .textContent = day;
+
+
+            document.getElementById("dayOfWeek")
+                .textContent =
+                `"${dayOfWeek}"`;
+
+
+            document.getElementById("hour")
+                .textContent =
+                String(hour).padStart(2, "0");
+
+
+            document.getElementById("minute")
+                .textContent =
+                String(minute).padStart(2, "0");
+
+
+            document.getElementById("second")
+                .textContent =
+                String(second).padStart(2, "0");
+
+
+            /* =========================
+               DAY PROGRESS
+            ========================= */
+
+            const secondsPassed =
+                hour * 3600 +
+                minute * 60 +
+                second;
+
+
+            const totalSeconds =
+                24 * 60 * 60;
+
+
+            const progress =
+                secondsPassed /
+                totalSeconds *
+                100;
+
+
+            document.getElementById("dayProgress")
+                .textContent =
+                progress.toFixed(2) + "%";
+
+
+            /* =========================
+               ANALOG CLOCK
+            ========================= */
+
+            const milliseconds =
+                now.getMilliseconds();
+
+
+            const seconds =
+                second +
+                milliseconds / 1000;
+
+
+            const minutes =
+                minute +
+                seconds / 60;
+
+
+            const hours =
+                (hour % 12) +
+                minutes / 60;
+
+
+            const secondAngle =
+                seconds * 6;
+
+
+            const minuteAngle =
+                minutes * 6;
+
+
+            const hourAngle =
+                hours * 30;
+
+
+            document.getElementById("secondHand")
+                .style.transform =
+                `translateX(-50%)
+                 rotate(${secondAngle}deg)`;
+
+
+            document.getElementById("minuteHand")
+                .style.transform =
+                `translateX(-50%)
+                 rotate(${minuteAngle}deg)`;
+
+
+            document.getElementById("hourHand")
+                .style.transform =
+                `translateX(-50%)
+                 rotate(${hourAngle}deg)`;
+        }
+
+
+        updateTime();
+
+        setInterval(updateTime, 50);
+
+
+
+        /* =========================
+           DARK / LIGHT MODE
+        ========================= */
+
+        const themeToggle =
+            document.getElementById(
+                "themeToggle"
+            );
+
+
+        const toggleCircle =
+            document.getElementById(
+                "toggleCircle"
+            );
+
+
+        themeToggle.addEventListener(
+            "click",
+            function () {
+
+                document.body.classList.toggle(
+                    "light"
+                );
+
+
+                themeToggle.classList.toggle(
+                    "light-mode"
+                );
+
+
+                if (
+                    document.body.classList.contains(
+                        "light"
+                    )
+                ) {
+
+                    toggleCircle.textContent =
+                        "☀️";
+
+                } else {
+
+                    toggleCircle.textContent =
+                        "🌙";
+
+                }
+
+            }
+        );
+
+    </script>
+
+</body>
+</html>
