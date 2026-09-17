@@ -233,6 +233,93 @@
 
 
         /* =========================
+           TIMEZONE SELECTOR
+        ========================= */
+
+        .clock-wrapper {
+            position: relative;
+        }
+
+        .clock {
+            cursor: pointer;
+        }
+
+        .clock:focus-visible {
+            outline: 2px solid var(--blue);
+            outline-offset: 6px;
+        }
+
+        .timezone-label {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--white);
+            opacity: 0.8;
+        }
+
+        .timezone-menu {
+            position: absolute;
+            top: 145px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-8px);
+            width: 190px;
+            padding: 10px;
+            background: rgba(38, 59, 76, 0.97);
+            border: 1px solid rgba(238, 238, 238, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+            z-index: 20;
+        }
+
+        .timezone-menu.open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .timezone-menu-title {
+            color: var(--white);
+            font-size: 12px;
+            margin: 2px 4px 8px;
+            opacity: 0.65;
+        }
+
+        .timezone-option {
+            width: 100%;
+            border: none;
+            background: transparent;
+            color: var(--white);
+            font-family: inherit;
+            font-size: 12px;
+            text-align: left;
+            padding: 9px 8px;
+            border-radius: 7px;
+            cursor: pointer;
+        }
+
+        .timezone-option:hover,
+        .timezone-option:focus-visible {
+            background: rgba(77, 163, 245, 0.18);
+            outline: none;
+        }
+
+        .light .timezone-menu {
+            background: rgba(255, 255, 255, 0.98);
+            border-color: rgba(38, 51, 62, 0.18);
+        }
+
+        @media (max-width: 800px) {
+            .timezone-menu {
+                top: 120px;
+            }
+        }
+
+        /* =========================
            SMALL SCREENS
         ========================= */
 
@@ -269,6 +356,35 @@
         }
 
     </style>
+
+<style id="timezone-scroll-fix">
+/* Scrollable timezone options */
+.timezone-options {
+    max-height: 260px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 5px;
+    scrollbar-width: thin;
+}
+
+.timezone-options::-webkit-scrollbar {
+    width: 6px;
+}
+
+.timezone-options::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.timezone-options::-webkit-scrollbar-thumb {
+    background: rgba(150, 150, 150, 0.55);
+    border-radius: 10px;
+}
+
+.timezone-options::-webkit-scrollbar-thumb:hover {
+    background: rgba(150, 150, 150, 0.8);
+}
+</style>
+
 </head>
 
 
@@ -378,7 +494,16 @@
              ANALOG CLOCK
         ========================= -->
 
-        <div class="clock">
+        <div class="clock-wrapper">
+
+            <div
+                class="clock"
+                id="clock"
+                role="button"
+                tabindex="0"
+                aria-label="Change time zone"
+                aria-expanded="false"
+            >
 
             <div
                 class="hand hour-hand"
@@ -397,6 +522,25 @@
 
             <div class="center"></div>
 
+            </div>
+
+            <div class="timezone-label" id="timezoneLabel">🇳🇵 Kathmandu</div>
+
+            <div class="timezone-menu" id="timezoneMenu" aria-hidden="true">
+                <div class="timezone-menu-title">🌍 Time Zone</div>
+                <div class="timezone-options">
+                    <button class="timezone-option" type="button" data-timezone="Asia/Kathmandu" data-label="🇳🇵 Kathmandu">🇳🇵 Nepal — Kathmandu</button>
+                    <button class="timezone-option" type="button" data-timezone="Asia/Tokyo" data-label="🇯🇵 Tokyo">🇯🇵 Japan — Tokyo</button>
+                    <button class="timezone-option" type="button" data-timezone="Asia/Seoul" data-label="🇰🇷 Seoul">🇰🇷 South Korea — Seoul</button>
+                    <button class="timezone-option" type="button" data-timezone="Asia/Shanghai" data-label="🇨🇳 Shanghai">🇨🇳 China — Shanghai</button>
+                    <button class="timezone-option" type="button" data-timezone="Europe/London" data-label="🇬🇧 London">🇬🇧 United Kingdom — London</button>
+                    <button class="timezone-option" type="button" data-timezone="Europe/Paris" data-label="🇫🇷 Paris">🇫🇷 France — Paris</button>
+                    <button class="timezone-option" type="button" data-timezone="America/New_York" data-label="🇺🇸 New York">🇺🇸 USA — New York</button>
+                    <button class="timezone-option" type="button" data-timezone="America/Los_Angeles" data-label="🇺🇸 Los Angeles">🇺🇸 USA — Los Angeles</button>
+                    <button class="timezone-option" type="button" data-timezone="Australia/Sydney" data-label="🇦🇺 Sydney">🇦🇺 Australia — Sydney</button>
+                </div>
+            </div>
+
         </div>
 
     </div>
@@ -409,52 +553,35 @@
            LIVE TIME
         ========================= */
 
+        let selectedTimeZone = "Asia/Kathmandu";
+
+
         function updateTime() {
 
             const now = new Date();
 
+            const parts = new Intl.DateTimeFormat("en-US", {
+                timeZone: selectedTimeZone,
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                weekday: "long",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hourCycle: "h23"
+            }).formatToParts(now);
 
-            // Date
+            const getPart = (type) =>
+                parts.find(part => part.type === type)?.value || "00";
 
-            const year =
-                now.getFullYear();
-
-
-            const month =
-                String(
-                    now.getMonth() + 1
-                ).padStart(2, "0");
-
-
-            const day =
-                String(
-                    now.getDate()
-                ).padStart(2, "0");
-
-
-            // Day
-
-            const dayOfWeek =
-                now.toLocaleDateString(
-                    "en-US",
-                    {
-                        weekday: "long"
-                    }
-                );
-
-
-            // Time
-
-            const hour =
-                now.getHours();
-
-
-            const minute =
-                now.getMinutes();
-
-
-            const second =
-                now.getSeconds();
+            const year = Number(getPart("year"));
+            const month = getPart("month");
+            const day = getPart("day");
+            const dayOfWeek = getPart("weekday");
+            const hour = Number(getPart("hour"));
+            const minute = Number(getPart("minute"));
+            const second = Number(getPart("second"));
 
 
             // Display
@@ -574,6 +701,54 @@
 
         setInterval(updateTime, 50);
 
+
+
+        /* =========================
+           TIMEZONE SELECTOR
+        ========================= */
+
+        const clock = document.getElementById("clock");
+        const timezoneMenu = document.getElementById("timezoneMenu");
+        const timezoneLabel = document.getElementById("timezoneLabel");
+        const timezoneOptions = document.querySelectorAll(".timezone-option");
+
+        function toggleTimezoneMenu(force) {
+            const shouldOpen = typeof force === "boolean"
+                ? force
+                : !timezoneMenu.classList.contains("open");
+
+            timezoneMenu.classList.toggle("open", shouldOpen);
+            timezoneMenu.setAttribute("aria-hidden", String(!shouldOpen));
+            clock.setAttribute("aria-expanded", String(shouldOpen));
+        }
+
+        clock.addEventListener("click", () => toggleTimezoneMenu());
+
+        clock.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                toggleTimezoneMenu();
+            }
+            if (event.key === "Escape") {
+                toggleTimezoneMenu(false);
+            }
+        });
+
+        timezoneOptions.forEach(option => {
+            option.addEventListener("click", (event) => {
+                event.stopPropagation();
+                selectedTimeZone = option.dataset.timezone;
+                timezoneLabel.textContent = option.dataset.label;
+                toggleTimezoneMenu(false);
+                updateTime();
+            });
+        });
+
+        document.addEventListener("click", (event) => {
+            if (!event.target.closest(".clock-wrapper")) {
+                toggleTimezoneMenu(false);
+            }
+        });
 
 
         /* =========================
